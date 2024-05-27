@@ -20,6 +20,9 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -156,6 +159,23 @@ class MatchDayControllerTests {
         Assertions.assertThat(originalSize).isEqualTo(1);
         int expectedSize = this.matchDayRepository.findAll().size();
         Assertions.assertThat(expectedSize).isEqualTo(0);
+    }
+
+    @Test
+    public void testMatchIdList() {
+        // Given
+        MatchDayEntity matchDayEntity = new MatchDayEntity();
+        UUID matchId1 = UUID.randomUUID();
+        UUID matchId2 = UUID.randomUUID();
+
+        // When
+        matchDayEntity.getMatchIdList().add(matchId1);
+        matchDayEntity.getMatchIdList().add(matchId2);
+
+        // Then
+        assertEquals(2, matchDayEntity.getMatchIdList().size());
+        assertTrue(matchDayEntity.getMatchIdList().contains(matchId1));
+        assertTrue(matchDayEntity.getMatchIdList().contains(matchId2));
     }
     
 }

@@ -34,7 +34,17 @@ public class WebSecurityConfigurer {
                 .roles("USER", "ADMIN")
                 .build();
 
-        return new InMemoryUserDetailsManager(user, admin);
+        UserDetails journalist = User.withUsername("journalist")
+                .password(passwordEncoder.encode("journalist"))
+                .roles("JOURNALIST")
+                .build();
+
+        UserDetails memberLeague = User.withUsername("memberLeague")
+                .password(passwordEncoder.encode("memberLeague"))
+                .roles("MEMBER-LEAGUE")
+                .build();
+
+        return new InMemoryUserDetailsManager(user, admin, journalist, memberLeague);
     }
 
     @Bean

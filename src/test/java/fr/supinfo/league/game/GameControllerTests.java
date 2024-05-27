@@ -21,8 +21,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
@@ -159,4 +162,181 @@ public class GameControllerTests {
         resultActions.andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().json(expected));
     }
+
+    @WithMockUser(roles = {"JOURNALIST"})
+    @Test
+    void whenSetGameTime_givenValidTimes() throws Exception {
+        // Given
+        GameEntity game = new GameEntity();
+        game.setDescription("Good game");
+        game.setMatchDayId(UUID.fromString("ac05477e-60e0-4c07-9455-6929c1b4c169"));
+        game.setHomeTeamId(UUID.fromString("22f8841b-c1c3-49e2-9e08-8884ca1ff9c0"));
+        game.setVisitorTeamId(UUID.fromString("5b6bbd96-3b0c-4b34-aeaf-e001d0e1f0da"));
+        game = gameRepository.save(game);
+
+        LocalTime startTime = LocalTime.of(15, 15, 15);
+        LocalTime endTime = LocalTime.of(16, 15, 15);
+
+        // When
+        ResultActions resultActions = this.mockMvc.perform(MockMvcRequestBuilders.put(TESTED_URL + "/" + game.getId() + "/time")
+                .param("startTime", startTime.toString())
+                .param("endTime", endTime.toString()));
+
+        // Then
+        resultActions.andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
+
+    @WithMockUser(roles = {"JOURNALIST"})
+    @Test
+    void whenSetGameTime_givenEndTimeBeforeStartTime() throws Exception {
+        // Given
+        GameEntity game = new GameEntity();
+        game.setDescription("Good game");
+        game.setMatchDayId(UUID.fromString("ac05477e-60e0-4c07-9455-6929c1b4c169"));
+        game.setHomeTeamId(UUID.fromString("22f8841b-c1c3-49e2-9e08-8884ca1ff9c0"));
+        game.setVisitorTeamId(UUID.fromString("5b6bbd96-3b0c-4b34-aeaf-e001d0e1f0da"));
+        game = gameRepository.save(game);
+
+        LocalTime startTime = LocalTime.of(15, 15, 15);
+        LocalTime endTime = LocalTime.of(14, 15, 15);
+
+        // When
+        ResultActions resultActions = this.mockMvc.perform(MockMvcRequestBuilders.put(TESTED_URL + "/" + game.getId() + "/time")
+                .param("startTime", startTime.toString())
+                .param("endTime", endTime.toString()));
+
+        // Then
+        resultActions.andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
+    @WithMockUser(roles = {"BASIC"})
+    @Test
+    void whenSetGameTime_givenNonJournalistUser() throws Exception {
+        // Given
+        UUID gameId = UUID.fromString("ac05477e-60e0-4c07-9455-6929c1b4c169");
+        LocalTime startTime = LocalTime.of(15, 15, 15);
+        LocalTime endTime = LocalTime.of(16, 15, 15);
+
+        // When
+        ResultActions resultActions = this.mockMvc.perform(MockMvcRequestBuilders.put(TESTED_URL + "/" + gameId + "/time")
+                .param("startTime", startTime.toString())
+                .param("endTime", endTime.toString()));
+
+        // Then
+        resultActions.andExpect(MockMvcResultMatchers.status().isForbidden());
+    }
+
+    @WithMockUser(roles = {"JOURNALIST"})
+    @Test
+    void whenAddComment_givenValidGameIdAndComment() throws Exception {
+        // Given
+        GameEntity game = new GameEntity();
+        game.setDescription("Good game");
+        game.setMatchDayId(UUID.fromString("ac05477e-60e0-4c07-9455-6929c1b4c169"));
+        game.setHomeTeamId(UUID.fromString("22f8841b-c1c3-49e2-9e08-8884ca1ff9c0"));
+        game.setVisitorTeamId(UUID.fromString("5b6bbd96-3b0c-4b34-aeaf-e001d0e1f0da"));
+        game = gameRepository.save(game);
+
+        String comment = "Great game!";
+
+        // When
+        ResultActions resultActions = this.mockMvc.perform(MockMvcRequestBuilders.post(TESTED_URL + "/" + game.getId() + "/comments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(comment));
+
+        // Then
+        resultActions.andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
+    @WithMockUser(roles = {"JOURNALIST"})
+    @Test
+    void whenGetComments_givenValidGameId() throws Exception {
+        // Given
+        GameEntity game = new GameEntity();
+        game.setDescription("Good game");
+        game.setMatchDayId(UUID.fromString("ac05477e-60e0-4c07-9455-6929c1b4c169"));
+        game.setHomeTeamId(UUID.fromString("22f8841b-c1c3-49e2-9e08-8884ca1ff9c0"));
+        game.setVisitorTeamId(UUID.fromString("5b6bbd96-3b0c-4b34-aeaf-e001d0e1f0da"));
+        game.setComments(List.of("Great game!"));
+        game = gameRepository.save(game);
+
+        // When
+        ResultActions resultActions = this.mockMvc.perform(MockMvcRequestBuilders.get(TESTED_URL + "/" + game.getId() + "/comments"));
+
+        // Then
+        resultActions.andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().json("[\"Great game!\"]"));
+
+    }
+
+    @WithMockUser(roles = {"JOURNALIST"})
+    @Test
+    void whenAddEvent_givenValidGameIdAndEvent() throws Exception {
+        // Given
+        GameEntity game = new GameEntity();
+        game.setDescription("Good game");
+        game.setMatchDayId(UUID.fromString("ac05477e-60e0-4c07-9455-6929c1b4c169"));
+        game.setHomeTeamId(UUID.fromString("22f8841b-c1c3-49e2-9e08-8884ca1ff9c0"));
+        game.setVisitorTeamId(UUID.fromString("5b6bbd96-3b0c-4b34-aeaf-e001d0e1f0da"));
+        game = gameRepository.save(game);
+
+        String event = "Goal!";
+
+        // When
+        ResultActions resultActions = this.mockMvc.perform(MockMvcRequestBuilders.post(TESTED_URL + "/" + game.getId() + "/events")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(event));
+
+        // Then
+        resultActions.andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
+    @WithMockUser(roles = {"MEMBER-LEAGUE"})
+    @Test
+    void whenPostponeGame_givenValidGameIdAndReason() throws Exception {
+        // Given
+        GameEntity game = new GameEntity();
+        game.setDescription("Good game");
+        game.setMatchDayId(UUID.fromString("ac05477e-60e0-4c07-9455-6929c1b4c169"));
+        game.setHomeTeamId(UUID.fromString("22f8841b-c1c3-49e2-9e08-8884ca1ff9c0"));
+        game.setVisitorTeamId(UUID.fromString("5b6bbd96-3b0c-4b34-aeaf-e001d0e1f0da"));
+        game.setStartTime(LocalTime.now().plusHours(1));
+        game = gameRepository.save(game);
+
+        String reason = "Weather conditions";
+
+        // When
+        ResultActions resultActions = this.mockMvc.perform(MockMvcRequestBuilders.put(TESTED_URL + "/" + game.getId() + "/postpone")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(reason));
+
+        // Then
+        resultActions.andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
+
+    @WithMockUser(roles = {"MEMBER-LEAGUE"})
+    @Test
+    void whenSuspendGame_givenValidGameIdAndReason() throws Exception {
+        // Given
+        GameEntity game = new GameEntity();
+        game.setDescription("Good game");
+        game.setMatchDayId(UUID.fromString("ac05477e-60e0-4c07-9455-6929c1b4c169"));
+        game.setHomeTeamId(UUID.fromString("22f8841b-c1c3-49e2-9e08-8884ca1ff9c0"));
+        game.setVisitorTeamId(UUID.fromString("5b6bbd96-3b0c-4b34-aeaf-e001d0e1f0da"));
+        game.setStartTime(LocalTime.now().minusHours(1));
+        game = gameRepository.save(game);
+
+        String reason = "Weather conditions";
+
+        // When
+        ResultActions resultActions = this.mockMvc.perform(MockMvcRequestBuilders.put(TESTED_URL + "/" + game.getId() + "/suspend")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(reason));
+
+        // Then
+        resultActions.andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
 }
