@@ -281,7 +281,7 @@ public class GameControllerTests {
         game.setVisitorTeamId(UUID.fromString("5b6bbd96-3b0c-4b34-aeaf-e001d0e1f0da"));
         game = gameRepository.save(game);
 
-        String event = "Goal!";
+        String event = "Goal : K.Mbappe";
 
         // When
         ResultActions resultActions = this.mockMvc.perform(MockMvcRequestBuilders.post(TESTED_URL + "/" + game.getId() + "/events")
